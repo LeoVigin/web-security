@@ -7,7 +7,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
     exit;
 }
 
-if (!isset($_SESSION['admin_posttoken'])) {
+if (!isset($_SESSION['admin_post_token'])) {
     try {
         $_SESSION['admin_post_token'] = bin2hex(random_bytes(32));
     } catch (Exception $e) {
@@ -15,57 +15,52 @@ if (!isset($_SESSION['admin_posttoken'])) {
     }
 }
 
-$msg = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify token
     if (!isset($_POST['token']) || $_POST['token'] !== ($_SESSION['admin_post_token'] ?? null)) {
-        $msg = '<p>Token invalide : action non autorisée.</p>';
-    } else {
-        $title = isset($_POST['title']) ? trim($_POST['title']) : '';
-        $content = isset($_POST['content']) ? trim($_POST['content']) : '';
-        $image = isset($_POST['image']) ? trim($_POST['image']) : '';
+        die('<p>Token invalide : action non autorisée.</p>');
+    }
 
-        if ($title === '' || $content === '') {
-            $msg = '<p>Le titre et le contenu sont requis.</p>';
-        } else {
+    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+    $content = isset($_POST['content']) ? trim($_POST['content']) : '';
+    $image = isset($_POST['image']) ? trim($_POST['image']) : '';
+    $slug = isset($_POST['slug']) ? trim($_POST['slug']) : '';
 
-            $slug = strtolower($title);
-            $slug = iconv('UTF-8', 'ASCII//TRANSLIT', $slug);
-            $slug = preg_replace('/[^a-z0-9]+/i', '-', $slug);
-            $slug = trim($slug, '-');
+    if ($title === '' || $content === '' || $slug === '') {
+        die('<p>Le titre, le slug et le contenu sont requis.</p>');
+    }
 
-            try {
-                $pdo = new PDO('mysql:host=localhost;dbname=tortue-ninja', 'root', '');
-                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            } catch (PDOException $e) {
-                die('Erreur : ' . $e->getMessage());
-            }
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=tortue-ninja', 'root', '');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch (PDOException $e) {
+        die('Erreur : ' . $e->getMessage());
+    }
 
-            $baseSlug = $slug;
-            $i = 1;
-            $stmt = $pdo->prepare('SELECT COUNT(*) FROM post WHERE slug = :slug');
-            while (true) {
-                $stmt->execute(['slug' => $slug]);
-                $count = (int)$stmt->fetchColumn();
-                if ($count === 0) break;
-                $slug = $baseSlug . '-' . $i;
-                $i++;
-            }
+    // Check slug uniqueness — do not auto-modify; inform if already exists
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM post WHERE slug = :slug');
+    $stmt->execute(['slug' => $slug]);
+    $count = (int)$stmt->fetchColumn();
+    if ($count > 0) {
+        die('<p>Ce slug existe déjà. Choisissez-en un autre.</p>');
+    }
 
-            $insert = $pdo->prepare('INSERT INTO post (title, slug, content, image) VALUES (:title, :slug, :content, :image)');
-            try {
-                $insert->execute([
-                    'title' => $title,
-                    'slug' => $slug,
-                    'content' => $content,
-                    'image' => $image
-                ]);
-                $msg = '<p>Article créé avec succès.</p>';
-            } catch (PDOException $e) {
-                $msg = '<p>Erreur lors de la création de l\'article.</p>';
-            }
+    $insert = $pdo->prepare('INSERT INTO post (title, slug, content, image) VALUES (:title, :slug, :content, :image)');
+    try {
+        $insert->execute([
+            'title' => $title,
+            'slug' => $slug,
+            'content' => $content,
+            'image' => $image
+        ]);
+        // invalidate token after successful use
+        if (isset($_SESSION['admin_post_token'])) {
+            unset($_SESSION['admin_post_token']);
         }
+        header('Location: index.php');
+        exit;
+    } catch (PDOException $e) {
+        die('<p>Erreur lors de la création de l\'article.</p>');
     }
 }
 ?>
@@ -81,11 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
     <h1>Créer un article</h1>
-    <?php echo $msg; ?>
     <form method="post" action="">
         <input type="hidden" name="token" value="<?php echo htmlspecialchars($_SESSION['admin_post_token'] ?? '', ENT_QUOTES); ?>">
         <label for="title">Titre</label>
         <input type="text" id="title" name="title" placeholder="Titre de l'article" required>
+
+        <label for="slug">Slug</label>
+        <input type="text" id="slug" name="slug" placeholder="slug" required>
 
         <label for="content">Contenu</label>
         <textarea id="content" name="content" rows="8" placeholder="Contenu de l'article" required></textarea>
