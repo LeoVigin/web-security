@@ -28,7 +28,7 @@ if (isset($email) && isset($password)) {
             $_SESSION['user_id'] = $user['id'] ?? null;
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user['role'];
-            header('Location: admin.php');
+            header('Location: index.php');
             exit;
         } else {
             $error = 'Invalid credentials';
