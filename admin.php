@@ -1,5 +1,4 @@
 <?php
-
 if (isset($_POST['email']) && !empty($_POST['email'])) {
     $email = htmlspecialchars($_POST['email']);
 }
@@ -10,7 +9,6 @@ if (isset($_POST['password']) && !empty($_POST['password'])) {
 }
 ?>
 <?php
-// Admin page: create posts (title, content, image URL)
 session_start();
 
 $msg = '';
@@ -23,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($title === '' || $content === '') {
         $msg = '<p>Le titre et le contenu sont requis.</p>';
     } else {
-        // generate slug
+
         $slug = strtolower($title);
         $slug = iconv('UTF-8', 'ASCII//TRANSLIT', $slug);
         $slug = preg_replace('/[^a-z0-9]+/i', '-', $slug);
@@ -36,7 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die('Erreur : ' . $e->getMessage());
         }
 
-        // ensure unique slug by appending a counter if needed
         $baseSlug = $slug;
         $i = 1;
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM post WHERE slug = :slug');
@@ -48,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $i++;
         }
 
-        // insert post
         $insert = $pdo->prepare('INSERT INTO post (title, slug, content, image) VALUES (:title, :slug, :content, :image)');
         try {
             $insert->execute([
@@ -67,11 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Créer un article</title>
 </head>
+
 <body>
     <h1>Créer un article</h1>
     <?php echo $msg; ?>
@@ -88,4 +86,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit">Publier</button>
     </form>
 </body>
+
 </html>
