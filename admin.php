@@ -15,8 +15,23 @@ if (!isset($_SESSION['admin_post_token'])) {
     }
 }
 
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=tortue-ninja', 'root', '');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die('Erreur : ' . $e->getMessage());
+}
+// GET ALL POSTS
+$stmtpost = $pdo->query('SELECT id, title, slug, content, image FROM post');
+
+$posts = $stmtpost->fetchAll(PDO::FETCH_ASSOC);
+
+if (!$posts) {
+    die('Erreur : No posts found');
+}
+
+// CREATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Verify token
     if (!isset($_POST['token']) || $_POST['token'] !== ($_SESSION['admin_post_token'] ?? null)) {
         die('<p>Token invalide : action non autorisée.</p>');
     }
@@ -30,17 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die('<p>Le titre, le slug et le contenu sont requis.</p>');
     }
 
-    try {
-        $pdo = new PDO('mysql:host=localhost;dbname=tortue-ninja', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (PDOException $e) {
-        die('Erreur : ' . $e->getMessage());
-    }
-
-    // Check slug uniqueness — do not auto-modify; inform if already exists
     $stmt = $pdo->prepare('SELECT COUNT(*) FROM post WHERE slug = :slug');
     $stmt->execute(['slug' => $slug]);
-    $count = (int)$stmt->fetchColumn();
+    $count = (int) $stmt->fetchColumn();
     if ($count > 0) {
         die('<p>Ce slug existe déjà. Choisissez-en un autre.</p>');
     }
@@ -75,23 +82,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
-    <h1>Créer un article</h1>
-    <form method="post" action="">
-        <input type="hidden" name="token" value="<?php echo htmlspecialchars($_SESSION['admin_post_token'] ?? '', ENT_QUOTES); ?>">
-        <label for="title">Titre</label>
-        <input type="text" id="title" name="title" placeholder="Titre de l'article" required>
+    <main>
+        <article>
+            <h1>Créer un article</h1>
+            <form method="post" action="">
+                <input type="hidden" name="token"
+                    value="<?php echo htmlspecialchars($_SESSION['admin_post_token'] ?? '', ENT_QUOTES); ?>">
+                <label for="title">Titre</label>
+                <input type="text" id="title" name="title" placeholder="Titre de l'article" required>
 
-        <label for="slug">Slug</label>
-        <input type="text" id="slug" name="slug" placeholder="slug" required>
+                <label for="slug">Slug</label>
+                <input type="text" id="slug" name="slug" placeholder="slug" required>
 
-        <label for="content">Contenu</label>
-        <textarea id="content" name="content" rows="8" placeholder="Contenu de l'article" required></textarea>
+                <label for="content">Contenu</label>
+                <textarea id="content" name="content" rows="8" placeholder="Contenu de l'article" required></textarea>
 
-        <label for="image">Image (URL)</label>
-        <input type="text" id="image" name="image" placeholder="https://...">
+                <label for="image">Image (URL)</label>
+                <input type="text" id="image" name="image" placeholder="https://...">
 
-        <button type="submit">Publier</button>
-    </form>
+                <button type="submit">Publier</button>
+            </form>
+        </article>
+        <article>
+            <?php
+            foreach ($posts as $post) {
+                echo '<h1>' . htmlspecialchars($post['title']) . '</h1>';
+                echo '<p>' . htmlspecialchars($post['content']) . '</p>';
+                echo '<img src="' . htmlspecialchars($post['image']) . '" alt=""><hr>';
+            }
+            ?>
+        </article>
+    </main>
 </body>
 
 </html>
