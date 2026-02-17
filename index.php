@@ -1,29 +1,21 @@
 <?php
-// if (!isset($_GET['slug']) || empty($_GET['slug'])) {
-//     die('Erreur : Slug non fourni');
-// }
-
-// $slug = htmlspecialchars($_GET['slug']);
-
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=tortue-ninja', 'root', '');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die('Erreur : ' . $e->getMessage());
 }
 
-$verif_post = $pdo->prepare('SELECT * FROM post WHERE id, title, slug, content, image  = :id, :title, :slug, :content, :image');
-// $verif_post->execute(['slug' => $slug]);
+$stmt = $pdo->query('SELECT id, title, slug, content, image FROM post');
 
-// if ($verif_post->rowCount() == 0) {
-//     die('Erreur : No posts found');
-// }
+$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$post = $verif_post->fetch();
-?>
+if (!$posts) {
+    die('Erreur : No posts found');
+}
 
-<?= $post['title'] ?>
-<p>
-    <?= $post['content'] ?>
-</p>
-<img>
-<?= $post['image'] ?></img>
+foreach ($posts as $post) {
+    echo '<h1>' . htmlspecialchars($post['title']) . '</h1>';
+    echo '<p>' . htmlspecialchars($post['content']) . '</p>';
+    echo '<img src="' . htmlspecialchars($post['image']) . '" alt=""><hr>';
+}
