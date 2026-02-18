@@ -1,5 +1,5 @@
 # Web Ssecurity
-<img width="1901" height="877" alt="Screenshot 2026-02-18 155741" src="https://github.com/user-attachments/assets/5d1c6e93-671b-402f-8197-a8d5a6252dff" />
+<img width="1900" height="876" alt="image" src="https://github.com/user-attachments/assets/fb5fca9e-d33b-404e-93f0-434c95e0d035" />
 A small blog using CRUD through admin's rights.
 
 ## Installation & Start
