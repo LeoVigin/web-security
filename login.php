@@ -69,9 +69,9 @@ if (isset($email) && isset($password)) {
             </form>
         </section>
     </main>
-    <footer>
-        <p class="footer text">@TortueNinja2026</p>
-    </footer>
+    <?php
+    include "includes/footer.html";
+    ?>
 </body>
 
 </html>
