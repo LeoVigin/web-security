@@ -14,8 +14,46 @@ if (!$posts) {
     die('Erreur : No posts found');
 }
 
-foreach ($posts as $post) {
-    echo '<h1>' . htmlspecialchars($post['title']) . '</h1>';
-    echo '<p>' . htmlspecialchars($post['content']) . '</p>';
-    echo '<img src="' . htmlspecialchars($post['image']) . '" alt=""><hr>';
-}
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Russo+One&display=swap" rel="stylesheet">
+    <title>Document</title>
+</head>
+
+<body>
+    <?php
+    include "includes/header.html";
+    ?>
+    <main class="main">
+        <section class="post-section">
+            <?php
+            foreach ($posts as $post) {
+                ?>
+                <article class="post">
+                    <?php
+
+                    echo '<h1 class="title">' . htmlspecialchars($post['title']) . '</h1>';
+                    echo '<p class="post-content text">' . htmlspecialchars($post['content']) . '</p>';
+                    echo '<img class="post-img" src="' . htmlspecialchars($post['image']) . '" alt="">';
+                    ?>
+                </article>
+                <?php
+            }
+            ?>
+        </section>
+    </main>
+    <footer>
+        <p class="footer text">@TortueNinja2026</p>
+    </footer>
+
+</body>
+
+</html>

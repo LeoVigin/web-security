@@ -26,48 +26,88 @@ $stmtpost = $pdo->query('SELECT id, title, slug, content, image FROM post');
 
 $posts = $stmtpost->fetchAll(PDO::FETCH_ASSOC);
 
-if (!$posts) {
-    die('Erreur : No posts found');
-}
-
-// CREATE
+// CREATE / UPDATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token']) || $_POST['token'] !== ($_SESSION['admin_post_token'] ?? null)) {
-        die('<p>Token invalide : action non autorisée.</p>');
+        die('<p>Token invalide : action non autorisée.</p>');
     }
 
     $title = isset($_POST['title']) ? trim($_POST['title']) : '';
     $content = isset($_POST['content']) ? trim($_POST['content']) : '';
     $image = isset($_POST['image']) ? trim($_POST['image']) : '';
     $slug = isset($_POST['slug']) ? trim($_POST['slug']) : '';
+    $edit_slug = isset($_POST['edit_slug']) ? trim($_POST['edit_slug']) : null;
 
     if ($title === '' || $content === '' || $slug === '') {
         die('<p>Le titre, le slug et le contenu sont requis.</p>');
     }
 
-    $stmt = $pdo->prepare('SELECT COUNT(*) FROM post WHERE slug = :slug');
-    $stmt->execute(['slug' => $slug]);
-    $count = (int) $stmt->fetchColumn();
-    if ($count > 0) {
-        die('<p>Ce slug existe déjà. Choisissez-en un autre.</p>');
-    }
-
-    $insert = $pdo->prepare('INSERT INTO post (title, slug, content, image) VALUES (:title, :slug, :content, :image)');
     try {
-        $insert->execute([
-            'title' => $title,
-            'slug' => $slug,
-            'content' => $content,
-            'image' => $image
-        ]);
-        // invalidate token after successful use
+        if ($edit_slug) {
+            $update = $pdo->prepare('UPDATE post SET title = :title, slug = :slug, content = :content, image = :image WHERE slug = :old_slug');
+            $update->execute([
+                'title' => $title,
+                'slug' => $slug,
+                'content' => $content,
+                'image' => $image,
+                'old_slug' => $edit_slug
+            ]);
+        } else {
+            $insert = $pdo->prepare('INSERT INTO post (title, slug, content, image) VALUES (:title, :slug, :content, :image)');
+            $insert->execute([
+                'title' => $title,
+                'slug' => $slug,
+                'content' => $content,
+                'image' => $image
+            ]);
+        }
         if (isset($_SESSION['admin_post_token'])) {
             unset($_SESSION['admin_post_token']);
         }
         header('Location: index.php');
         exit;
     } catch (PDOException $e) {
-        die('<p>Erreur lors de la création de l\'article.</p>');
+        die('<p>Erreur lors du traitement de l\'article.</p>');
+    }
+}
+?>
+
+<?php
+$update = false;
+$editPost = null;
+if (isset($_GET['edit'])) {
+    $edit_slug = $_GET['edit'];
+    $stmt = $pdo->prepare('SELECT id, title, slug, content, image FROM post WHERE slug = :slug');
+    $stmt->execute(['slug' => $edit_slug]);
+    $editPost = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($editPost) {
+        $update = true;
+        $title = $editPost['title'];
+        $slug = $editPost['slug'];
+        $content = $editPost['content'];
+        $image = $editPost['image'];
+    }
+}
+?>
+
+<?php
+if (isset($_GET['del'])) {
+    if (!isset($_GET['token']) || $_GET['token'] !== ($_SESSION['admin_post_token'] ?? null)) {
+        die('<p>Token invalide : suppression non autorisée.</p>');
+    }
+
+    $del_slug = $_GET['del'];
+    $stmt = $pdo->prepare('DELETE FROM post WHERE slug = :slug');
+    try {
+        $stmt->execute(['slug' => $del_slug]);
+        if (isset($_SESSION['admin_post_token'])) {
+            unset($_SESSION['admin_post_token']);
+        }
+        header('Location: index.php');
+        exit;
+    } catch (PDOException $e) {
+        die('<p>Erreur lors de la suppression de l\'article.</p>');
     }
 }
 ?>
@@ -78,41 +118,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Russo+One&display=swap" rel="stylesheet">
     <title>Admin - Créer un article</title>
 </head>
 
 <body>
-    <main>
-        <article>
-            <h1>Créer un article</h1>
-            <form method="post" action="">
+    <?php
+    include "includes/header.html";
+    ?>
+    <main class="main main-admin">
+        <section class="admin-form-container">
+            <form class="form admin-form" method="post" action="">
                 <input type="hidden" name="token"
                     value="<?php echo htmlspecialchars($_SESSION['admin_post_token'] ?? '', ENT_QUOTES); ?>">
-                <label for="title">Titre</label>
-                <input type="text" id="title" name="title" placeholder="Titre de l'article" required>
+                <?php if ($update): ?>
+                    <input type="hidden" name="edit_slug"
+                        value="<?php echo htmlspecialchars($editPost['slug'], ENT_QUOTES); ?>">
+                <?php endif; ?>
+                <h1 class="title"><?php echo $update ? 'Modify your post' : 'Create your post'; ?></h1>
+                <input class="text" type="text" id="title" name="title" placeholder="Title"
+                    value="<?php echo htmlspecialchars($update ? $title : '', ENT_QUOTES); ?>" required>
 
-                <label for="slug">Slug</label>
-                <input type="text" id="slug" name="slug" placeholder="slug" required>
+                <input class="text" type="text" id="slug" name="slug" placeholder="Slug"
+                    value="<?php echo htmlspecialchars($update ? $slug : '', ENT_QUOTES); ?>" required>
+                <textarea class="text" id="content" name="content" rows="8" placeholder="Content"
+                    required><?php echo htmlspecialchars($update ? $content : '', ENT_QUOTES); ?></textarea>
+                <input class="text" type="text" id="image" name="image" placeholder="Image's link"
+                    value="<?php echo htmlspecialchars($update ? $image : '', ENT_QUOTES); ?>">
 
-                <label for="content">Contenu</label>
-                <textarea id="content" name="content" rows="8" placeholder="Contenu de l'article" required></textarea>
-
-                <label for="image">Image (URL)</label>
-                <input type="text" id="image" name="image" placeholder="https://...">
-
-                <button type="submit">Publier</button>
+                <button class="text" type="submit"><?php echo $update ? 'Update' : 'Create'; ?></button>
             </form>
-        </article>
-        <article>
+        </section>
+        <section class="admin-post-section">
             <?php
             foreach ($posts as $post) {
-                echo '<h1>' . htmlspecialchars($post['title']) . '</h1>';
-                echo '<p>' . htmlspecialchars($post['content']) . '</p>';
-                echo '<img src="' . htmlspecialchars($post['image']) . '" alt=""><hr>';
+                ?>
+                <article class="post admin-post">
+                    <?php
+                    echo '<h1 class="title">' . htmlspecialchars($post['title']) . '</h1>';
+                    echo '<p class="post-content text">' . htmlspecialchars($post['content']) . '</p>';
+                    if (!empty($post['image'])) {
+                        echo '<img class="post-img" src="' . htmlspecialchars($post['image']) . '" alt="' . htmlspecialchars($post['title']) . '">';
+                    }
+                    echo '<button><a class="text" href="?edit=' . htmlspecialchars($post['slug']) . '">Modifier</a></button> ';
+                    echo '<button><a class="text" href="?del=' . htmlspecialchars($post['slug']) . '&token=' . htmlspecialchars($_SESSION['admin_post_token'] ?? '') . '">Supprimer</a></button>';
+                    ?>
+                </article>
+                <?php
             }
             ?>
-        </article>
+        </section>
     </main>
+    <footer>
+        <p class="footer text">@TortueNinja2026</p>
+    </footer>
 </body>
 
 </html>

@@ -1,12 +1,6 @@
 <?php
 session_start();
 
-// if (!isset($_POST['token']) || $_POST['token'] !== $_SESSION['token_article_add']) {
-//     die('Erreur : Token invalide');
-// }
-
-// unset($_SESSION['token_article_add']);
-
 if (isset($_POST['email']) && !empty($_POST['email'])) {
     $email = htmlspecialchars($_POST['email']);
 }
@@ -35,7 +29,7 @@ if (isset($email) && isset($password)) {
             'password' => $hashedPassword,
             'role' => 'User'
         ]);
-        echo '<p>Your user was added</p>';
+        header('Location: login.php');
     }
 }
 ?>
@@ -46,16 +40,31 @@ if (isset($email) && isset($password)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Russo+One&display=swap" rel="stylesheet">
+    <title>Sign Up</title>
 </head>
 
 <body>
-    <form action="" method="post">
-        <input type="text" name="email" id="email" placeholder="Insert your email">
-        <input type="text" name="password" id="password" placeholder="Insert your password">
-        <br>
-        <button type="submit">Submit</button>
-    </form>
+    <?php
+    include "includes/header.html";
+    ?>
+    <main>
+        <section class="form-section">
+            <form class="form" action="" method="post">
+                <h1 class="title">Create your account</h1>
+                <input class="text" type="text" name="email" id="email" placeholder="Insert your email">
+                <input class="text" type="text" name="password" id="password" placeholder="Insert your password">
+                <br>
+                <button class="text" type="submit">Sign up</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p class="footer text">@TortueNinja2026</p>
+    </footer>
 </body>
 
 </html>

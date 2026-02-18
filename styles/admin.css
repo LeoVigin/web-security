@@ -1,0 +1,46 @@
+.main-admin {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+.admin-form-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    width: 40%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    overflow-x: hidden;
+    margin: 2rem;
+}
+.admin-form {
+    margin-right: 4rem;
+    width: 88% !important;
+}
+.admin-form input,textarea {
+    margin-top: 0.5rem !important; 
+}
+.admin-post-section {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-row-gap: 2rem;
+}
+.admin-post button {
+    padding: 0.5rem;
+    font-size: 15px;
+    margin-top: 1rem;
+    border-radius: 20px;
+    background-color: #dce4e9;
+    transition: 0.2s;
+}
+.admin-post button:hover {
+    background-color: #aebfca;
+    transition: 0.2s;
+    cursor: pointer;
+}
+.admin-post button a {
+    text-decoration: none;
+    color: black;
+}
