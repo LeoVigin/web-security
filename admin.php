@@ -101,33 +101,13 @@ if (isset($_GET['del'])) {
     $stmt = $pdo->prepare('DELETE FROM post WHERE slug = :slug');
     try {
         $stmt->execute(['slug' => $del_slug]);
-        try {
-            if ($edit_slug) {
-                $update = $pdo->prepare('UPDATE post SET title = :title, slug = :slug, content = :content, image = :image WHERE slug = :old_slug');
-                $update->execute([
-                    'title' => $title,
-                    'slug' => $slug,
-                    'content' => $content,
-                    'image' => $image,
-                    'old_slug' => $edit_slug
-                ]);
-            } else {
-                $insert = $pdo->prepare('INSERT INTO post (title, slug, content, image) VALUES (:title, :slug, :content, :image)');
-                $insert->execute([
-                    'title' => $title,
-                    'slug' => $slug,
-                    'content' => $content,
-                    'image' => $image
-                ]);
-            }
-            if (isset($_SESSION['admin_post_token'])) {
-                unset($_SESSION['admin_post_token']);
-            }
-            header('Location: index.php');
-            exit;
-        } catch (PDOException $e) {
-            die('<p>Erreur lors du traitement de l\'article.</p>');
+        if (isset($_SESSION['admin_post_token'])) {
+            unset($_SESSION['admin_post_token']);
         }
+        header('Location: index.php');
+        exit;
+    } catch (PDOException $e) {
+        die('<p>Erreur lors de la suppression de l\'article.</p>');
     }
 }
 ?>
