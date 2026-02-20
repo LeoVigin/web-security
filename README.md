@@ -1,4 +1,4 @@
-# Web Ssecurity
+# Web Security
 <img width="1900" height="876" alt="image" src="https://github.com/user-attachments/assets/fb5fca9e-d33b-404e-93f0-434c95e0d035" />
 A small blog using CRUD through admin's rights.
 
